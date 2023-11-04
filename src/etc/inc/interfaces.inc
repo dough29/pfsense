@@ -5238,6 +5238,28 @@ function DHCP6_Config_File_Advanced($interface, $wancfg, $wanif) {
 			$id_assoc_statement_prefix .= "\t};";
 		}
 
+		$trackiflist = array();
+		$iflist = link_interface_to_track6($interface);
+		foreach ($iflist as $ifname => $ifcfg) {
+			if (is_numeric($ifcfg['track6-prefix-id'])) {
+				$trackiflist[$ifname] = $ifcfg;
+			}
+		}
+		
+		if (is_numeric($wancfg['dhcp6-ia-pd-len'])) {
+			$id_assoc_statement_prefix .= "\n";
+			foreach ($trackiflist as $friendly => $ifcfg) {
+				if (g_get('debug')) {
+					log_error("setting up $interface - {$ifcfg['track6-prefix-id']}");
+				}
+				$realif = get_real_interface($friendly);
+				$id_assoc_statement_prefix .= "\tprefix-interface {$realif} {\n";
+				$id_assoc_statement_prefix .= "\t\tsla-id {$ifcfg['track6-prefix-id']};\n";
+				$id_assoc_statement_prefix .= "\t\tsla-len {$wancfg['dhcp6-ia-pd-len']};\n";
+				$id_assoc_statement_prefix .= "\t};\n";
+			}
+		}
+
 		if (($wancfg['adv_dhcp6_id_assoc_statement_prefix'] != '') ||
 		    (is_numeric($wancfg['adv_dhcp6_prefix_interface_statement_sla_id']))) {
 			$id_assoc_statement_prefix .= "\n";
